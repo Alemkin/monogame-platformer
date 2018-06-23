@@ -1,24 +1,46 @@
-﻿using Microsoft.Xna.Framework;
+﻿using FarseerPhysics.Dynamics;
+using FarseerPhysics.Factories;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace app.Desktop
 {
   public class Game1 : Game {
-    GraphicsDeviceManager graphics;
-    InputHelper inputHelper;
+    private GraphicsDeviceManager graphics;
+		private InputHelper inputHelper;
 
-    SpriteBatch spriteBatch;
+		private SpriteBatch spriteBatch;
 
-    SpriteFont title;
+		private SpriteFont title;
 
-    Texture2D hillBackground;
-    Texture2D bill;
-		Vector2 billPosition;
+    private Body billBody;
+    private Body groundBody;
+		private Texture2D ground;
+		private Texture2D hillBackground;
+		private Texture2D bill;
+
+		private Vector2 billPosition;
+
+		private World world;
+
+    // Simple camera controls
+    private Matrix view;
+
+    private Vector2 cameraPosition;
+    private Vector2 screenCenter;
+    private Vector2 groundOrigin;
+    private Vector2 billOrigin;
+
 
     public Game1() {
-      graphics = new GraphicsDeviceManager(this);
-      Content.RootDirectory = "Content";
+			graphics = new GraphicsDeviceManager(this);
+      graphics.PreferredBackBufferWidth = 800;
+      graphics.PreferredBackBufferHeight = 480;
+
+			Content.RootDirectory = "Content";
+
+      world = new World (new Vector2 (0, 9.82f));
     }
 
     /// <summary>
