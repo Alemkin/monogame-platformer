@@ -18,11 +18,16 @@ namespace app.Desktop
     private Body billBody;
     private Body platformBody;
 
+    private enum BillState { ATTACKING, FIGHT_STANCE, IDLE}
+
 		private Texture2D platform;
     private Texture2D hillBackground;
     Rectangle rectangle1;
     Rectangle rectangle2;
-		private Texture2D bill;
+    private Texture2D billIdle;
+    private Texture2D billAttacking;
+    private Texture2D billFight;
+    private BillState billState = BillState.IDLE;
 
 		private Vector2 billPosition;
     private Vector2 platformPosition;
@@ -70,7 +75,9 @@ namespace app.Desktop
       spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
 
     	title = Content.Load<SpriteFont>("Font");
-    	bill = Content.Load<Texture2D>("shot/1");
+      billIdle = Content.Load<Texture2D>("shot/1");
+      billAttacking = Content.Load<Texture2D>("shot/2");
+      billFight = Content.Load<Texture2D>("shot/3");
       hillBackground = Content.Load<Texture2D>("hillBackground");
       platform = Content.Load<Texture2D>("2dplatform");
 
@@ -121,9 +128,7 @@ namespace app.Desktop
         cameraPosition.X -= 5f;
         rectangle1.X += 5;
         rectangle2.X += 5;
-      }
-
-      if (inputHelper.IsKeyDown (Keys.Left)) {
+      } else if (inputHelper.IsKeyDown (Keys.Left)) {
         billPosition.X -= 5f;
         titlePosition.X -= 5f;
         cameraPosition.X += 5f;
@@ -134,11 +139,16 @@ namespace app.Desktop
       if (inputHelper.IsKeyDown (Keys.Down)) {
         billPosition.Y += 5f;
         //cameraPosition.Y -= 5f;
-      }
-
-      if (inputHelper.IsKeyDown (Keys.Up)) {
+      } else if (inputHelper.IsKeyDown (Keys.Up)) {
         billPosition.Y -= 5f;
         //cameraPosition.Y += 5f;
+      }
+
+      billState = BillState.IDLE;
+      if (inputHelper.IsNewKeyPress(Keys.Space)) {
+        billState = BillState.ATTACKING;
+      } else if (inputHelper.IsKeyDown(Keys.Space)) {
+        billState = BillState.FIGHT_STANCE;
       }
 
       view = Matrix.CreateTranslation (new Vector3 (cameraPosition - screenCenter, 0f)) * Matrix.CreateTranslation (new Vector3 (screenCenter, 0f));
@@ -154,7 +164,19 @@ namespace app.Desktop
 
       spriteBatch.Draw(hillBackground, rectangle1, Color.White);
       spriteBatch.Draw(hillBackground, rectangle2, Color.White);
-      spriteBatch.Draw(bill, billPosition, Color.White);
+
+      switch (billState) {
+        case BillState.IDLE:
+          spriteBatch.Draw(billIdle, billPosition, Color.White);
+          break;
+        case BillState.ATTACKING:
+          spriteBatch.Draw(billAttacking, billPosition, Color.White);
+          break;
+        case BillState.FIGHT_STANCE:
+          spriteBatch.Draw(billFight, billPosition, Color.White);
+          break;
+      }
+
       spriteBatch.Draw(platform, platformPosition, Color.White);
       spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, titlePosition, Color.White);
       spriteBatch.End();
