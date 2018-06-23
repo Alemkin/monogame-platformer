@@ -18,7 +18,7 @@ namespace app.Desktop
     private Body billBody;
     private Body platformBody;
 
-    private enum BillState { ATTACKING, FIGHT_STANCE, IDLE}
+    private enum BillState { ATTACKING, FIGHT_STANCE, IDLE, WALKING }
 
 		private Texture2D platform;
     private Texture2D hillBackground;
@@ -27,6 +27,10 @@ namespace app.Desktop
     private Texture2D billIdle;
     private Texture2D billAttacking;
     private Texture2D billFight;
+
+    private Texture2D billWalkingRightLeg;
+    private Texture2D billWalkingLeftLeg;
+
     private BillState billState = BillState.IDLE;
 
 		private Vector2 billPosition;
@@ -78,6 +82,8 @@ namespace app.Desktop
       billIdle = Content.Load<Texture2D>("shot/1");
       billAttacking = Content.Load<Texture2D>("shot/2");
       billFight = Content.Load<Texture2D>("shot/3");
+      billWalkingRightLeg = Content.Load<Texture2D>("walking/1");
+      billWalkingLeftLeg = Content.Load<Texture2D>("walking/2");
       hillBackground = Content.Load<Texture2D>("hillBackground");
       platform = Content.Load<Texture2D>("2dplatform");
 
@@ -122,7 +128,13 @@ namespace app.Desktop
     private void HandleKeyboardInput() {
       if (inputHelper.IsNewKeyPress (Keys.Escape)) { Exit (); }
 
+      billState = BillState.IDLE;
+      if (inputHelper.IsKeyDown(Keys.Space) && !inputHelper.IsNewKeyPress(Keys.Space)) {
+        billState = BillState.FIGHT_STANCE;
+      }
+
       if (inputHelper.IsKeyDown (Keys.Right)) {
+        billState = BillState.WALKING;
         billPosition.X += 5f;
         titlePosition.X += 5f;
         cameraPosition.X -= 5f;
@@ -134,22 +146,22 @@ namespace app.Desktop
         cameraPosition.X += 5f;
         rectangle1.X -= 5;
         rectangle2.X -= 5;
+        billState = BillState.WALKING;
       }
 
-      if (inputHelper.IsKeyDown (Keys.Down)) {
+      if (inputHelper.IsKeyDown(Keys.Down)) {
         billPosition.Y += 5f;
+        billState = BillState.WALKING;
         //cameraPosition.Y -= 5f;
-      } else if (inputHelper.IsKeyDown (Keys.Up)) {
+      } else if (inputHelper.IsKeyDown(Keys.Up)) {
         billPosition.Y -= 5f;
+        billState = BillState.WALKING;
         //cameraPosition.Y += 5f;
       }
 
-      billState = BillState.IDLE;
       if (inputHelper.IsNewKeyPress(Keys.Space)) {
         billState = BillState.ATTACKING;
-      } else if (inputHelper.IsKeyDown(Keys.Space)) {
-        billState = BillState.FIGHT_STANCE;
-      }
+      } 
 
       view = Matrix.CreateTranslation (new Vector3 (cameraPosition - screenCenter, 0f)) * Matrix.CreateTranslation (new Vector3 (screenCenter, 0f));
     }
@@ -165,6 +177,15 @@ namespace app.Desktop
       spriteBatch.Draw(hillBackground, rectangle1, Color.White);
       spriteBatch.Draw(hillBackground, rectangle2, Color.White);
 
+      DrawBill();
+
+      spriteBatch.Draw(platform, platformPosition, Color.White);
+      spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, titlePosition, Color.White);
+      spriteBatch.End();
+    }
+
+    private int billWalkingPosition = 0;
+    private void DrawBill() {
       switch (billState) {
         case BillState.IDLE:
           spriteBatch.Draw(billIdle, billPosition, Color.White);
@@ -172,14 +193,23 @@ namespace app.Desktop
         case BillState.ATTACKING:
           spriteBatch.Draw(billAttacking, billPosition, Color.White);
           break;
+        case BillState.WALKING:
+          if (billWalkingPosition <= 20) {
+            billWalkingPosition++;
+            spriteBatch.Draw(billWalkingLeftLeg, billPosition, Color.White);
+          } else if (billWalkingPosition > 20 && billWalkingPosition <= 40){
+            billWalkingPosition++;
+            spriteBatch.Draw(billWalkingRightLeg, billPosition, Color.White);            
+          } else {
+            billWalkingPosition = 0;
+            spriteBatch.Draw(billWalkingLeftLeg, billPosition, Color.White);
+          }
+          break;
         case BillState.FIGHT_STANCE:
+          billWalkingPosition = 0;
           spriteBatch.Draw(billFight, billPosition, Color.White);
           break;
       }
-
-      spriteBatch.Draw(platform, platformPosition, Color.White);
-      spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, titlePosition, Color.White);
-      spriteBatch.End();
     }
   }
 }
