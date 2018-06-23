@@ -38,20 +38,13 @@ namespace app.Desktop
     /// all of your content.
     /// </summary>
     protected override void LoadContent() {
-      // Create a new SpriteBatch, which can be used to draw textures.
       spriteBatch = new SpriteBatch(GraphicsDevice);
     	title = Content.Load<SpriteFont>("Font");
     	bill = Content.Load<Texture2D>("shot/1");
     	hillBackground = Content.Load<Texture2D>("hillBackground");
-      // TODO: use this.Content to load your game content here
     }
 
-    /// <summary>
-    /// UnloadContent will be called once per game and is the place to unload
-    /// game-specific content.
-    /// </summary>
     protected override void UnloadContent() {
-        // TODO: Unload any non ContentManager content here
     }
 
     /// <summary>
@@ -90,7 +83,6 @@ namespace app.Desktop
     protected override void Draw(GameTime gameTime) {
       GraphicsDevice.Clear(Color.CornflowerBlue);
       string currentGameTimeInSeconds = gameTime.TotalGameTime.Seconds.ToString();
-      // TODO: Add your drawing code here
       spriteBatch.Begin();
 
       spriteBatch.Draw(hillBackground, new Rectangle(0, 0, 800, 480), Color.White);
