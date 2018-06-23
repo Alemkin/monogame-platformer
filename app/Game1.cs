@@ -1,4 +1,5 @@
-﻿using FarseerPhysics.Dynamics;
+﻿using System;
+using FarseerPhysics.Dynamics;
 using FarseerPhysics.Factories;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -15,12 +16,17 @@ namespace app.Desktop
 		private SpriteFont title;
 
     private Body billBody;
-    private Body groundBody;
-		private Texture2D ground;
-		private Texture2D hillBackground;
+    private Body platformBody;
+
+		private Texture2D platform;
+    private Texture2D hillBackground;
+    Rectangle rectangle1;
+    Rectangle rectangle2;
 		private Texture2D bill;
 
 		private Vector2 billPosition;
+    private Vector2 platformPosition;
+    private Vector2 titlePosition;
 
 		private World world;
 
@@ -29,14 +35,12 @@ namespace app.Desktop
 
     private Vector2 cameraPosition;
     private Vector2 screenCenter;
-    private Vector2 groundOrigin;
-    private Vector2 billOrigin;
 
 
     public Game1() {
 			graphics = new GraphicsDeviceManager(this);
-      graphics.PreferredBackBufferWidth = 800;
-      graphics.PreferredBackBufferHeight = 480;
+      graphics.PreferredBackBufferWidth = 1280;
+      graphics.PreferredBackBufferHeight = 720;
 
 			Content.RootDirectory = "Content";
 
@@ -50,9 +54,12 @@ namespace app.Desktop
     /// and initialize them as well.
     /// </summary>
     protected override void Initialize() {
-        base.Initialize();
+      base.Initialize();
   		inputHelper = new InputHelper();
-			billPosition = new Vector2(10, 10);
+      billPosition = screenCenter;
+      titlePosition = new Vector2(20, 5);
+      rectangle1 = new Rectangle (0, 0, 1280, 720);
+      rectangle2 = new Rectangle (1280, 0, 1280, 720);
     }
 
     /// <summary>
@@ -60,10 +67,21 @@ namespace app.Desktop
     /// all of your content.
     /// </summary>
     protected override void LoadContent() {
-      spriteBatch = new SpriteBatch(GraphicsDevice);
+      spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
+
     	title = Content.Load<SpriteFont>("Font");
     	bill = Content.Load<Texture2D>("shot/1");
-    	hillBackground = Content.Load<Texture2D>("hillBackground");
+      hillBackground = Content.Load<Texture2D>("hillBackground");
+      platform = Content.Load<Texture2D>("2dplatform");
+
+      view = Matrix.Identity;
+      cameraPosition = Vector2.Zero;
+      screenCenter = new Vector2 (graphics.GraphicsDevice.Viewport.Width / 2f, graphics.GraphicsDevice.Viewport.Height / 2f);
+      platformPosition = new Vector2(5f, 650f);
+
+      // Farseer expects objects to be scaled to MKS (meters, kilos, seconds)
+      // 1 meters equals 64 pixels here
+      //ConvertUnits.SetDisplayUnitToSimUnitRatio (64f);
     }
 
     protected override void UnloadContent() {
@@ -77,27 +95,54 @@ namespace app.Desktop
     protected override void Update(GameTime gameTime) {
       inputHelper.Update();
 
-      if (inputHelper.IsNewKeyPress(Keys.Escape)) { Exit(); }
-
-			if (inputHelper.IsKeyDown(Keys.Right)) {
-				billPosition.X += 5;
-      }
-
-			if (inputHelper.IsKeyDown(Keys.Left)) {
-        billPosition.X -= 5;
-      }
-
-			if (inputHelper.IsKeyDown(Keys.Down)) {
-        billPosition.Y += 5;
-      }
-
-			if (inputHelper.IsKeyDown(Keys.Up)) {
-        billPosition.Y -= 5;
-      }
+      HandleKeyboardInput();
+      HandleBackgroundScroll();
+      //We update the world
+      world.Step ((float)gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f);
 
       base.Update(gameTime);
     }
 
+    private void HandleBackgroundScroll() {
+      if (rectangle1.X + hillBackground.Width <= 0) {
+        rectangle1.X = rectangle2.X + hillBackground.Width;        
+      }
+      if (rectangle2.X + hillBackground.Width <= 0) {
+        rectangle2.X = rectangle1.X + hillBackground.Width;        
+      }
+    }
+
+    private void HandleKeyboardInput() {
+      if (inputHelper.IsNewKeyPress (Keys.Escape)) { Exit (); }
+
+      if (inputHelper.IsKeyDown (Keys.Right)) {
+        billPosition.X += 5f;
+        titlePosition.X += 5f;
+        cameraPosition.X -= 5f;
+        rectangle1.X += 5;
+        rectangle2.X += 5;
+      }
+
+      if (inputHelper.IsKeyDown (Keys.Left)) {
+        billPosition.X -= 5f;
+        titlePosition.X -= 5f;
+        cameraPosition.X += 5f;
+        rectangle1.X -= 5;
+        rectangle2.X -= 5;
+      }
+
+      if (inputHelper.IsKeyDown (Keys.Down)) {
+        billPosition.Y += 5f;
+        //cameraPosition.Y -= 5f;
+      }
+
+      if (inputHelper.IsKeyDown (Keys.Up)) {
+        billPosition.Y -= 5f;
+        //cameraPosition.Y += 5f;
+      }
+
+      view = Matrix.CreateTranslation (new Vector3 (cameraPosition - screenCenter, 0f)) * Matrix.CreateTranslation (new Vector3 (screenCenter, 0f));
+    }
     /// <summary>
     /// This is called when the game should draw itself.
     /// </summary>
@@ -105,11 +150,13 @@ namespace app.Desktop
     protected override void Draw(GameTime gameTime) {
       GraphicsDevice.Clear(Color.CornflowerBlue);
       string currentGameTimeInSeconds = gameTime.TotalGameTime.Seconds.ToString();
-      spriteBatch.Begin();
+      spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, view);
 
-      spriteBatch.Draw(hillBackground, new Rectangle(0, 0, 800, 480), Color.White);
-			spriteBatch.Draw(bill, billPosition, Color.White);
-      spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, new Vector2(20, 5), Color.White);
+      spriteBatch.Draw(hillBackground, rectangle1, Color.White);
+      spriteBatch.Draw(hillBackground, rectangle2, Color.White);
+      spriteBatch.Draw(bill, billPosition, Color.White);
+      spriteBatch.Draw(platform, platformPosition, Color.White);
+      spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, titlePosition, Color.White);
       spriteBatch.End();
     }
   }
