@@ -33,6 +33,9 @@ namespace app.Desktop
 
     private BillState billState = BillState.IDLE;
 
+    private Vector2 billOrigin;
+    private Vector2 platformOrigin;
+
 		private Vector2 billPosition;
     private Vector2 platformPosition;
     private Vector2 titlePosition;
@@ -90,15 +93,29 @@ namespace app.Desktop
       billWalkingLeftLeg = Content.Load<Texture2D>("walking/2");
       hillBackground = Content.Load<Texture2D>("hillBackground");
       platform = Content.Load<Texture2D>("2dplatform");
+      /* We need XNA to draw the ground and circle at the center of the shapes */
+      billOrigin = new Vector2(billIdle.Width / 2f, billIdle.Height / 2f);
+      platformOrigin = new Vector2(platform.Width / 2f, platform.Height / 2f);
 
       view = Matrix.Identity;
       cameraPosition = Vector2.Zero;
       screenCenter = new Vector2 (graphics.GraphicsDevice.Viewport.Width / 2f, graphics.GraphicsDevice.Viewport.Height / 2f);
-      platformPosition = new Vector2(5f, 650f);
 
       // Farseer expects objects to be scaled to MKS (meters, kilos, seconds)
       // 1 meters equals 64 pixels here
-      //ConvertUnits.SetDisplayUnitToSimUnitRatio (64f);
+      ConvertUnits.SetDisplayUnitToSimUnitRatio(64f);
+
+      billBody = BodyFactory.CreateRectangle(world, ConvertUnits.ToSimUnits(100f), ConvertUnits.ToSimUnits(100f), 1f, billPosition);
+      // Give it some bounce and friction
+      billBody.Restitution = 0.3f;
+      billBody.Friction = 0.5f;
+
+      platformPosition = new Vector2(5f, 650f);
+      // Create the ground fixture
+      platformBody = BodyFactory.CreateRectangle(world, ConvertUnits.ToSimUnits(1323f), ConvertUnits.ToSimUnits(248f), 1f, platformPosition);
+      platformBody.IsStatic = true;
+      platformBody.Restitution = 0.3f;
+      platformBody.Friction = 0.5f;
     }
 
     protected override void UnloadContent() {
@@ -115,6 +132,7 @@ namespace app.Desktop
       UpdateFramerate(gameTime);
       HandleKeyboardInput();
       HandleBackgroundScroll();
+
       //We update the world
       world.Step ((float)gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f);
 
@@ -192,6 +210,7 @@ namespace app.Desktop
 
       DrawBill();
 
+      //spriteBatch.Draw(platform, ConvertUnits.ToDisplayUnits(platformBody.Position), null, Color.White, 0f, platformOrigin, 1f, SpriteEffects.None, 0f);
       spriteBatch.Draw(platform, platformPosition, Color.White);
       spriteBatch.DrawString(font, "Elapsed Time: " + currentGameTimeInSeconds + " seconds", titlePosition, Color.White);
       spriteBatch.DrawString(font, "Framerate: " + currentFramerate.ToString(), frameratePosition, Color.White);
@@ -204,6 +223,7 @@ namespace app.Desktop
       var twoThirdsFrameWalkingTime = thirdFrameWalkingTime * 2;
       switch (billState) {
         case BillState.IDLE:
+          //spriteBatch.Draw(billIdle, ConvertUnits.ToDisplayUnits(billBody.Position), null, Color.White, 0f, billOrigin, 1f, SpriteEffects.None, 0f);
           spriteBatch.Draw(billIdle, billPosition, Color.White);
           break;
         case BillState.ATTACKING:
