@@ -13,7 +13,7 @@ namespace app.Desktop
 
 		private SpriteBatch spriteBatch;
 
-		private SpriteFont title;
+    private SpriteFont font;
 
     private Body billBody;
     private Body platformBody;
@@ -36,6 +36,7 @@ namespace app.Desktop
 		private Vector2 billPosition;
     private Vector2 platformPosition;
     private Vector2 titlePosition;
+    private Vector2 frameratePosition;
 
 		private World world;
 
@@ -44,6 +45,8 @@ namespace app.Desktop
 
     private Vector2 cameraPosition;
     private Vector2 screenCenter;
+
+    private int currentFramerate;
 
 
     public Game1() {
@@ -67,6 +70,7 @@ namespace app.Desktop
   		inputHelper = new InputHelper();
       billPosition = screenCenter;
       titlePosition = new Vector2(20, 5);
+      frameratePosition = new Vector2(20, 25);
       rectangle1 = new Rectangle (0, 0, 1280, 720);
       rectangle2 = new Rectangle (1280, 0, 1280, 720);
     }
@@ -78,7 +82,7 @@ namespace app.Desktop
     protected override void LoadContent() {
       spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
 
-    	title = Content.Load<SpriteFont>("Font");
+    	font = Content.Load<SpriteFont>("Font");
       billIdle = Content.Load<Texture2D>("shot/1");
       billAttacking = Content.Load<Texture2D>("shot/2");
       billFight = Content.Load<Texture2D>("shot/3");
@@ -108,12 +112,19 @@ namespace app.Desktop
     protected override void Update(GameTime gameTime) {
       inputHelper.Update();
 
+      UpdateFramerate(gameTime);
       HandleKeyboardInput();
       HandleBackgroundScroll();
       //We update the world
       world.Step ((float)gameTime.ElapsedGameTime.TotalMilliseconds * 0.001f);
 
       base.Update(gameTime);
+    }
+
+    private void UpdateFramerate(GameTime gameTime) {
+      var deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
+      var floatFramerate = 1.0f / deltaTime;
+      currentFramerate = (int)Math.Round(floatFramerate);
     }
 
     private void HandleBackgroundScroll() {
@@ -137,12 +148,14 @@ namespace app.Desktop
         billState = BillState.WALKING;
         billPosition.X += 5f;
         titlePosition.X += 5f;
+        frameratePosition.X += 5f;
         cameraPosition.X -= 5f;
         rectangle1.X += 5;
         rectangle2.X += 5;
       } else if (inputHelper.IsKeyDown (Keys.Left)) {
         billPosition.X -= 5f;
         titlePosition.X -= 5f;
+        frameratePosition.X -= 5f;
         cameraPosition.X += 5f;
         rectangle1.X -= 5;
         rectangle2.X -= 5;
@@ -180,12 +193,15 @@ namespace app.Desktop
       DrawBill();
 
       spriteBatch.Draw(platform, platformPosition, Color.White);
-      spriteBatch.DrawString(title, "Elapsed Time: " + currentGameTimeInSeconds, titlePosition, Color.White);
+      spriteBatch.DrawString(font, "Elapsed Time: " + currentGameTimeInSeconds + " seconds", titlePosition, Color.White);
+      spriteBatch.DrawString(font, "Framerate: " + currentFramerate.ToString(), frameratePosition, Color.White);
       spriteBatch.End();
     }
 
     private int billWalkingPosition = 0;
     private void DrawBill() {
+      var thirdFrameWalkingTime = currentFramerate / 3;
+      var twoThirdsFrameWalkingTime = thirdFrameWalkingTime * 2;
       switch (billState) {
         case BillState.IDLE:
           spriteBatch.Draw(billIdle, billPosition, Color.White);
@@ -194,10 +210,10 @@ namespace app.Desktop
           spriteBatch.Draw(billAttacking, billPosition, Color.White);
           break;
         case BillState.WALKING:
-          if (billWalkingPosition <= 20) {
+          if (billWalkingPosition <= thirdFrameWalkingTime) {
             billWalkingPosition++;
             spriteBatch.Draw(billWalkingLeftLeg, billPosition, Color.White);
-          } else if (billWalkingPosition > 20 && billWalkingPosition <= 40){
+          } else if (billWalkingPosition > thirdFrameWalkingTime && billWalkingPosition <= twoThirdsFrameWalkingTime){
             billWalkingPosition++;
             spriteBatch.Draw(billWalkingRightLeg, billPosition, Color.White);            
           } else {
